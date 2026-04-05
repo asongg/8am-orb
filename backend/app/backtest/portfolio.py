@@ -13,27 +13,31 @@ class Portfolio:
     def position_qty(self, symbol: str) -> float:
         return self.positions[symbol]
 
+    def position_avg_cost(self, symbol: str) -> float:
+        return self.avg_cost[symbol]
+
     def apply_fill(self, fill):
         symbol = fill["symbol"]
         qty = fill["qty"]
         price = fill["fill_price"]
+        commission = fill.get("commission", 0.0)
 
         if fill["side"] == "BUY":
             current_qty = self.positions[symbol]
             total_cost = self.avg_cost[symbol] * current_qty
-            total_cost += qty * price
+            total_cost += qty * price + commission
 
             new_qty = current_qty + qty
             self.positions[symbol] = new_qty
             self.avg_cost[symbol] = total_cost / new_qty if new_qty != 0 else 0.0
-            self.cash -= qty * price
+            self.cash -= qty * price + commission
 
         elif fill["side"] == "SELL":
             current_qty = self.positions[symbol]
-            pnl = (price - self.avg_cost[symbol]) * qty
+            pnl = (price - self.avg_cost[symbol]) * qty - commission
             self.realized_pnl += pnl
             self.positions[symbol] = current_qty - qty
-            self.cash += qty * price
+            self.cash += qty * price - commission
 
             if self.positions[symbol] == 0:
                 self.avg_cost[symbol] = 0.0

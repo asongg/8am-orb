@@ -12,6 +12,7 @@ from app.services.backtest_service import (
     list_backtest_runs,
     list_backtest_trades,
     list_equity_snapshots,
+    list_backtest_risk_events,
     run_backtest_and_persist,
 )
 
@@ -85,6 +86,26 @@ def get_backtest_equity(run_id: str, db: Session = Depends(get_db)):
             "snapshot_index": s.snapshot_index,
         }
         for s in snapshots
+    ]
+
+
+@router.get("/{run_id}/risk-events")
+def get_backtest_risk_events(run_id: str, db: Session = Depends(get_db)):
+    run = get_backtest_run(db, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Backtest run not found")
+
+    events = list_backtest_risk_events(db, run_id)
+    return [
+        {
+            "id": str(e.id),
+            "ts": e.ts.isoformat(),
+            "strategy_name": e.strategy_name,
+            "severity": e.severity,
+            "message": e.message,
+            "metadata_json": e.metadata_json,
+        }
+        for e in events
     ]
 
 
