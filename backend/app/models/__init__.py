@@ -6,6 +6,8 @@ from app.models.fill import FillModel
 from app.models.position import PositionModel
 from app.models.backtest_run import BacktestRunModel
 from app.models.risk_event import RiskEventModel
+from app.models.backtest_trade import BacktestTradeModel
+from app.models.equity_snapshot import EquitySnapshotModel
 
 __all__ = [
     "Base",
@@ -16,4 +18,6 @@ __all__ = [
     "PositionModel",
     "BacktestRunModel",
     "RiskEventModel",
+    "BacktestTradeModel",
+    "EquitySnapshotModel",
 ]

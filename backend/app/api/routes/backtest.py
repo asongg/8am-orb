@@ -10,6 +10,8 @@ from app.schemas.backtest import (
 from app.services.backtest_service import (
     get_backtest_run,
     list_backtest_runs,
+    list_backtest_trades,
+    list_equity_snapshots,
     run_backtest_and_persist,
 )
 
@@ -43,6 +45,47 @@ def get_backtest(run_id: str, db: Session = Depends(get_db)):
     if not run:
         raise HTTPException(status_code=404, detail="Backtest run not found")
     return serialize_run(run)
+
+
+@router.get("/{run_id}/trades")
+def get_backtest_trades(run_id: str, db: Session = Depends(get_db)):
+    run = get_backtest_run(db, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Backtest run not found")
+
+    trades = list_backtest_trades(db, run_id)
+    return [
+        {
+            "id": str(t.id),
+            "backtest_run_id": str(t.backtest_run_id),
+            "symbol": t.symbol,
+            "side": t.side,
+            "qty": t.qty,
+            "fill_price": t.fill_price,
+            "fill_ts": t.fill_ts.isoformat(),
+            "trade_index": t.trade_index,
+        }
+        for t in trades
+    ]
+
+
+@router.get("/{run_id}/equity")
+def get_backtest_equity(run_id: str, db: Session = Depends(get_db)):
+    run = get_backtest_run(db, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Backtest run not found")
+
+    snapshots = list_equity_snapshots(db, run_id)
+    return [
+        {
+            "id": str(s.id),
+            "backtest_run_id": str(s.backtest_run_id),
+            "ts": s.ts.isoformat(),
+            "equity": s.equity,
+            "snapshot_index": s.snapshot_index,
+        }
+        for s in snapshots
+    ]
 
 
 @router.post("/run", response_model=BacktestRunResponse)

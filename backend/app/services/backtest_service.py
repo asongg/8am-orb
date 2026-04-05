@@ -9,6 +9,8 @@ from app.backtest.metrics import compute_metrics
 from app.backtest.portfolio import Portfolio
 from app.data.queries import get_bars
 from app.models.backtest_run import BacktestRunModel
+from app.models.backtest_trade import BacktestTradeModel
+from app.models.equity_snapshot import EquitySnapshotModel
 from app.strategy.opening_range_breakout import OpeningRangeBreakoutStrategy
 
 
@@ -54,6 +56,7 @@ def run_backtest_and_persist(
             "slippage_bps": fill_model.slippage_bps,
             "starting_cash": starting_cash,
             "trade_count": len(trades),
+            "equity_points": len(equity_curve),
         },
         start_ts=start_ts,
         end_ts=end_ts,
@@ -65,6 +68,33 @@ def run_backtest_and_persist(
     )
 
     db.add(run)
+    db.flush()
+
+    trade_rows = [
+        BacktestTradeModel(
+            backtest_run_id=run.id,
+            symbol=t["symbol"],
+            side=t["side"],
+            qty=t["qty"],
+            fill_price=t["fill_price"],
+            fill_ts=t["fill_ts"],
+            trade_index=i,
+        )
+        for i, t in enumerate(trades)
+    ]
+
+    snapshot_rows = [
+        EquitySnapshotModel(
+            backtest_run_id=run.id,
+            ts=pt["ts"],
+            equity=pt["equity"],
+            snapshot_index=i,
+        )
+        for i, pt in enumerate(equity_curve)
+    ]
+
+    db.add_all(trade_rows)
+    db.add_all(snapshot_rows)
     db.commit()
     db.refresh(run)
     return run
@@ -77,4 +107,22 @@ def get_backtest_run(db: Session, run_id: str) -> BacktestRunModel | None:
 
 def list_backtest_runs(db: Session) -> list[BacktestRunModel]:
     stmt = select(BacktestRunModel).order_by(BacktestRunModel.created_at.desc())
+    return list(db.execute(stmt).scalars().all())
+
+
+def list_backtest_trades(db: Session, run_id: str) -> list[BacktestTradeModel]:
+    stmt = (
+        select(BacktestTradeModel)
+        .where(BacktestTradeModel.backtest_run_id == run_id)
+        .order_by(BacktestTradeModel.trade_index.asc())
+    )
+    return list(db.execute(stmt).scalars().all())
+
+
+def list_equity_snapshots(db: Session, run_id: str) -> list[EquitySnapshotModel]:
+    stmt = (
+        select(EquitySnapshotModel)
+        .where(EquitySnapshotModel.backtest_run_id == run_id)
+        .order_by(EquitySnapshotModel.snapshot_index.asc())
+    )
     return list(db.execute(stmt).scalars().all())
