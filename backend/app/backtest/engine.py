@@ -13,10 +13,18 @@ class BacktestEngine:
             signals = self.strategy.on_bar(bar, portfolio, state={})
 
             for signal in signals:
+                if signal.side == "BUY":
+                    qty = 10
+                else:
+                    qty = portfolio.position_qty(signal.symbol)
+
+                if qty <= 0:
+                    continue
+
                 order = {
                     "symbol": signal.symbol,
                     "side": signal.side,
-                    "qty": 10,
+                    "qty": qty,
                 }
 
                 fill = self.fill_model.simulate(order, bar)

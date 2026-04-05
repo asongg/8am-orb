@@ -7,6 +7,7 @@ from app.backtest.engine import BacktestEngine
 from app.backtest.portfolio import Portfolio
 from app.backtest.fills import SimpleFillModel
 from app.backtest.metrics import compute_metrics
+from app.models.backtest_run import BacktestRunModel
 
 
 def main():
@@ -18,20 +19,42 @@ def main():
     with SessionLocal() as db:
         bars = get_bars(db, symbol, start, end)
 
-    print(f"Loaded {len(bars)} bars")
+        print(f"Loaded {len(bars)} bars")
 
-    strategy = OpeningRangeBreakoutStrategy()
-    portfolio = Portfolio()
-    fill_model = SimpleFillModel()
+        strategy = OpeningRangeBreakoutStrategy()
+        portfolio = Portfolio()
+        fill_model = SimpleFillModel()
 
-    engine = BacktestEngine(strategy, fill_model)
+        engine = BacktestEngine(strategy, fill_model)
+        trades, equity_curve = engine.run(bars, portfolio)
+        metrics = compute_metrics(equity_curve)
 
-    trades, equity_curve = engine.run(bars, portfolio)
+        pnl = metrics["final_equity"] - 100_000
 
-    metrics = compute_metrics(equity_curve)
+        run = BacktestRunModel(
+            strategy_name=strategy.name,
+            params_json={
+                "symbol": symbol,
+                "range_minutes": strategy.range_minutes,
+                "fixed_qty": 10,
+                "slippage_bps": fill_model.slippage_bps,
+            },
+            start_ts=start,
+            end_ts=end,
+            pnl=pnl,
+            sharpe=metrics["sharpe"],
+            max_drawdown=metrics["max_drawdown"],
+            win_rate=None,
+            created_at=datetime.now(timezone.utc),
+        )
 
-    print("Trades:", len(trades))
-    print("Metrics:", metrics)
+        db.add(run)
+        db.commit()
+        db.refresh(run)
+
+        print("Trades:", len(trades))
+        print("Metrics:", metrics)
+        print("Saved backtest run:", run.id)
 
 
 if __name__ == "__main__":
