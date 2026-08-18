@@ -6,9 +6,9 @@ services:
     container_name: trading_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: trader
-      POSTGRES_PASSWORD: change_me
-      POSTGRES_DB: trading
+      POSTGRES_USER: ${POSTGRES_USER:-trader}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-trading}
     ports:
       - "5433:5432"
     volumes:
