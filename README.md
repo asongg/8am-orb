@@ -1,8 +1,8 @@
-# trdr
+# 8AM ORB
 
-A FastAPI backend for experimenting with systematic trading strategies. The app stores market bars, runs backtests, tracks trades/equity/risk events, and includes Alpaca integrations for historical data and paper trading.
+A FastAPI backend for experimenting with systematic trading strategies, specifically a trading strategy I saw online called '8AM ORB'. The app stores market bars, runs backtests, tracks trades/equity/risk events, and includes Alpaca integrations for historical data and paper trading.
 
-## Stack
+## The tech stack:
 
 - Python 3.12
 - FastAPI
@@ -17,15 +17,15 @@ A FastAPI backend for experimenting with systematic trading strategies. The app 
 cp .env.example .env
 ```
 
-Update `.env` with your local database settings and, optionally, Alpaca paper-trading credentials.
+Update `.env` with your local database settings and Alpaca paper-trading creds
 
 ```bash
 docker compose up --build
 ```
 
-The API runs at `http://localhost:8000`.
+The API runs at `http://localhost:8000` by default
 
-## Useful Endpoints
+## Endpoints that are useful:
 
 - `GET /health`
 - `GET /market/bars`
@@ -43,5 +43,3 @@ Run database migrations from the backend container or a local backend environmen
 ```bash
 alembic upgrade head
 ```
-
-Secrets should stay in `.env`. Use `.env.example` only for safe placeholder values.
